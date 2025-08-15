@@ -14,7 +14,16 @@ self.addEventListener('message', e => {
 });
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    for (const url of ASSETS) {
+      if (url.endsWith('index.html')) {
+        await c.add(new Request(url, {cache: 'reload'}));
+      } else {
+        await c.add(url);
+      }
+    }
+  })());
 });
 
 self.addEventListener('activate', (e) => {
