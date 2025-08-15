@@ -131,7 +131,7 @@
       for (let r=0; r<ROWS; r++) {
         const rowEl = document.createElement('div'); rowEl.className = 'row';
         for (let c=0; c<COLS; c++) {
-          const t = document.createElement('div'); t.className = 'tile'; t.id = `t-{r}-{c}`;
+          const t = document.createElement('div'); t.className = 'tile'; t.id = `t-${r}-${c}`;
           rowEl.appendChild(t);
         }
         board.appendChild(rowEl);
