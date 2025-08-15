@@ -36,7 +36,7 @@
       transition: transform .07s ease, background .2s;
     }
     .tile.reveal { transform: scale(1.02); }
-    .kbs { display:grid; gap:8px; padding:8px; }
+    .kbs { display:flex; flex-direction:column; gap:8px; padding:8px; align-items:center; }
     .kb-row { display:flex; gap:6px; justify-content:center; }
     .key {
       background:#2c3140; color:var(--text); border:none; padding:12px 10px;
@@ -109,6 +109,15 @@
       <p>You solved the word. Share with friends!</p>
       <button id="win-share">Share</button>
       <button id="win-close">Close</button>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="lose-modal">
+    <div class="modal-box">
+      <h2>Game Over</h2>
+      <p>The word was <span id="lose-word"></span>.</p>
+      <button id="lose-share">Share</button>
+      <button id="lose-close">Close</button>
     </div>
   </div>
 
@@ -384,7 +393,12 @@
         incrementStats(true, row);
         if (!freePlay) $('win-modal').classList.remove('hidden');
       }
-      else { toastMsg("The word was '"+target+"'"); incrementStats(false, ROWS); }
+      else {
+        toastMsg("The word was '"+target+"'");
+        incrementStats(false, ROWS);
+        $('lose-word').textContent = target;
+        $('lose-modal').classList.remove('hidden');
+      }
       updateStatsUI();
     }
 
@@ -448,6 +462,8 @@
     $('intro-start').addEventListener('click', () => $('intro-modal').classList.add('hidden'));
     $('win-close').addEventListener('click', () => $('win-modal').classList.add('hidden'));
     $('win-share').addEventListener('click', doShare);
+    $('lose-close').addEventListener('click', () => $('lose-modal').classList.add('hidden'));
+    $('lose-share').addEventListener('click', doShare);
 
     function newGame() {
       target = freePlay ? pickRandomWord() : pickWord(); row=0; col=0; over=false;
