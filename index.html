@@ -58,6 +58,11 @@
     }
     .toast.show { opacity:1; }
     a { color:var(--accent); text-decoration:none; }
+
+    .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; }
+    .modal.hidden { display:none; }
+    .modal-box { background:var(--panel); padding:20px; border-radius:10px; text-align:center; max-width:300px; }
+    .modal-box button { margin-top:10px; }
   </style>
 </head>
 <body>
@@ -67,6 +72,7 @@
       <div style="display:flex; gap:8px;">
         <button class="icon" id="btn-new">New</button>
         <button class="icon" id="btn-share">Share</button>
+        <button class="icon" id="btn-free">Free Play</button>
         <button class="icon" id="btn-install" style="display:none;">Install</button>
       </div>
     </header>
@@ -88,6 +94,32 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="modal hidden" id="intro-modal">
+    <div class="modal-box">
+      <h2>Welcome to Wordle</h2>
+      <p>Guess the word in 6 tries. A new word appears every day.</p>
+      <button id="intro-start">Start</button>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="win-modal">
+    <div class="modal-box">
+      <h2>Congratulations!</h2>
+      <p>You solved the word. Share with friends!</p>
+      <button id="win-share">Share</button>
+      <button id="win-close">Close</button>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="free-modal">
+    <div class="modal-box">
+      <h2>Free Play</h2>
+      <p>Words are picked at random. Free Play sharpens your Wordle skills.</p>
+      <button id="free-start">Start</button>
+      <button id="free-cancel">Cancel</button>
+    </div>
+  </div>
 
   <script>
     // --- PWA install prompt handling ---
@@ -230,6 +262,7 @@
     const board = $('board'); const kbs = $('kbs'); const status = $('status');
     const toast = $('toast');
 
+    let freePlay = false;
     let target = pickWord();
     let row = 0, col = 0, over = false;
     let grid = Array.from({length: ROWS}, () => Array(COLS).fill(""));
@@ -275,6 +308,10 @@
   const day = Math.floor(diff / (1000*60*60*24)); // 1..365
   return ANSWERS[(day - 1) % ANSWERS.length];
 }
+
+    function pickRandomWord() {
+      return ANSWERS[Math.floor(Math.random()*ANSWERS.length)];
+    }
 
     function draw() {
       for (let r=0; r<ROWS; r++) {
@@ -342,7 +379,11 @@
 
     function endGame(win) {
       over = true;
-      if (win) { toastMsg("Nice! You got it."); incrementStats(true, row); }
+      if (win) {
+        toastMsg("Nice! You got it.");
+        incrementStats(true, row);
+        if (!freePlay) $('win-modal').classList.remove('hidden');
+      }
       else { toastMsg("The word was '"+target+"'"); incrementStats(false, ROWS); }
       updateStatsUI();
     }
@@ -372,7 +413,6 @@
 
     // Share
     function buildShare() {
-      // Convert last row used (row-1) to emoji grid
       let usedRows = over && grid[row]?.every(x=>x) ? row+1 : row;
       usedRows = Math.min(usedRows, ROWS);
       const lines = [];
@@ -383,22 +423,34 @@
         }
         lines.push(line);
       }
-      return `Wordl‑ish {over?'✓':'…'}\n` + lines.join('\n');
+      return "No ads, no registration, just Worlde. Play at tinyurl.com/WordleNoAds\n" + lines.join('\n');
     }
 
-    $('btn-share').addEventListener('click', async () => {
+    async function doShare() {
       const text = buildShare();
       try {
-        await navigator.clipboard.writeText(text);
-        toastMsg("Result copied");
+        if (navigator.share) {
+          await navigator.share({ text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          toastMsg("Result copied");
+        }
       } catch(e) {
-        toastMsg("Copy failed");
+        toastMsg("Share failed");
       }
-    });
+    }
+
+    $('btn-share').addEventListener('click', doShare);
     $('btn-new').addEventListener('click', () => newGame());
+    $('btn-free').addEventListener('click', () => $('free-modal').classList.remove('hidden'));
+    $('free-start').addEventListener('click', () => { freePlay = true; $('free-modal').classList.add('hidden'); newGame(); });
+    $('free-cancel').addEventListener('click', () => $('free-modal').classList.add('hidden'));
+    $('intro-start').addEventListener('click', () => $('intro-modal').classList.add('hidden'));
+    $('win-close').addEventListener('click', () => $('win-modal').classList.add('hidden'));
+    $('win-share').addEventListener('click', doShare);
 
     function newGame() {
-      target = pickWord(); row=0; col=0; over=false;
+      target = freePlay ? pickRandomWord() : pickWord(); row=0; col=0; over=false;
       grid = Array.from({length: ROWS}, () => Array(COLS).fill(""));
       meta = Array.from({length: ROWS}, () => Array(COLS).fill(""));
       // reset keyboard color classes
@@ -421,6 +473,7 @@
 
     // Initialize
     buildBoard(); buildKeyboard(); draw(); updateStatsUI();
+    $('intro-modal').classList.remove('hidden');
 
   </script>
 </body>
