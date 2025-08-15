@@ -131,6 +131,15 @@
     </div>
   </div>
 
+  <div class="modal hidden" id="free-result-modal">
+    <div class="modal-box">
+      <h2 id="free-result-title"></h2>
+      <p id="free-result-text"></p>
+      <button id="free-again-yes">Yes</button>
+      <button id="free-again-no">No</button>
+    </div>
+  </div>
+
   <script>
     // --- PWA install prompt handling ---
     let deferredPrompt = null;
@@ -408,13 +417,25 @@
       if (win) {
         toastMsg("Nice! You got it.");
         incrementStats(true, row);
-        if (!freePlay) $('win-modal').classList.remove('hidden');
+        if (freePlay) {
+          $('free-result-title').textContent = 'Congratulations!';
+          $('free-result-text').textContent = 'Play again?';
+          $('free-result-modal').classList.remove('hidden');
+        } else {
+          $('win-modal').classList.remove('hidden');
+        }
       }
       else {
         toastMsg("The word was '"+target+"'");
         incrementStats(false, ROWS);
-        $('lose-word').textContent = target;
-        $('lose-modal').classList.remove('hidden');
+        if (freePlay) {
+          $('free-result-title').textContent = "The word was '"+target+"'";
+          $('free-result-text').textContent = 'Play again?';
+          $('free-result-modal').classList.remove('hidden');
+        } else {
+          $('lose-word').textContent = target;
+          $('lose-modal').classList.remove('hidden');
+        }
       }
       updateStatsUI();
     }
@@ -476,6 +497,8 @@
     $('btn-free').addEventListener('click', () => $('free-modal').classList.remove('hidden'));
     $('free-start').addEventListener('click', () => { freePlay = true; $('free-modal').classList.add('hidden'); newGame(); });
     $('free-cancel').addEventListener('click', () => $('free-modal').classList.add('hidden'));
+    $('free-again-yes').addEventListener('click', () => { $('free-result-modal').classList.add('hidden'); newGame(); });
+    $('free-again-no').addEventListener('click', () => { $('free-result-modal').classList.add('hidden'); freePlay=false; });
     $('intro-start').addEventListener('click', () => $('intro-modal').classList.add('hidden'));
     $('win-close').addEventListener('click', () => $('win-modal').classList.add('hidden'));
     $('win-share').addEventListener('click', doShare);
