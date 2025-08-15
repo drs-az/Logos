@@ -73,6 +73,7 @@
         <button class="icon" id="btn-new">New</button>
         <button class="icon" id="btn-share">Share</button>
         <button class="icon" id="btn-free">Free Play</button>
+        <button class="icon" id="btn-update">Update</button>
         <button class="icon" id="btn-install" style="display:none;">Install</button>
       </div>
     </header>
@@ -133,6 +134,7 @@
   <script>
     // --- PWA install prompt handling ---
     let deferredPrompt = null;
+    let swReg;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -148,8 +150,23 @@
 
     // --- Service Worker ---
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        swReg = reg;
+      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
     }
+
+    document.getElementById('btn-update').addEventListener('click', async () => {
+      if (!swReg) return;
+      await swReg.update();
+      if (swReg.waiting) {
+        if (confirm('Update available. Reload now?')) {
+          swReg.waiting.postMessage({type:'SKIP_WAITING'});
+        }
+      } else {
+        toastMsg('Already up to date');
+      }
+    });
 
     // --- Game State ---
     const ANSWERS = [
