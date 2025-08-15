@@ -1,7 +1,7 @@
 {
-  "name": "Wordle",
-  "short_name": "Wordle",
-  "description": "Worlde without ads or signing in",
+  "name": "Logos",
+  "short_name": "Logos",
+  "description": "Like Wordle, but without ads",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
