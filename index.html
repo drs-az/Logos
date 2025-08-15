@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Wordle</title>
+  <title>Logos</title>
   <style>
     :root {
       --bg:#141820; --panel:#1f2430; --tile:#2a2e38; --tile-border:#3a3f4d;
@@ -68,9 +68,9 @@
 <body>
   <div class="app">
     <header>
-      <h1>WORDLE</h1>
+      <h1>LOGOS</h1>
       <div style="display:flex; gap:8px;">
-        <button class="icon" id="btn-new">New</button>
+        <button class="icon" id="btn-new">Daily Word</button>
         <button class="icon" id="btn-share">Share</button>
         <button class="icon" id="btn-free">Free Play</button>
         <button class="icon" id="btn-update">Update</button>
@@ -454,7 +454,7 @@
         }
         lines.push(line);
       }
-      return "No ads, no registration, just Worlde. Play at tinyurl.com/WordleNoAds\n" + lines.join('\n');
+      return "No ads, no registration, just Logos. Play at https://tinyurl.com/LogosGame\n" + lines.join('\n');
     }
 
     async function doShare() {
