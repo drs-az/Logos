@@ -39,7 +39,7 @@ self.addEventListener('fetch', (e) => {
   // Network-first for html, cache-first for others
   if (url.pathname.endsWith('.html') || url.pathname === '/' ) {
     e.respondWith((async () => {
-      try { return await fetch(e.request); }
+      try { return await fetch(e.request, {cache: 'reload'}); }
       catch { return caches.match('./index.html'); }
     })());
   } else {
