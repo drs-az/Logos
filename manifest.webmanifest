@@ -1,0 +1,23 @@
+{
+  "name": "Wordl-ish",
+  "short_name": "Wordl-ish",
+  "description": "A clean, offline-capable Wordle-style PWA with install, share, and stats.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#141820",
+  "theme_color": "#1f2430",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f2430"/>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Wordl-ish</title>
+  <style>
+    :root {
+      --bg:#141820; --panel:#1f2430; --tile:#2a2e38; --tile-border:#3a3f4d;
+      --text:#eaeef7; --muted:#8e97a8; --green:#6aaa64; --yellow:#c9b458; --gray:#3a3a3c;
+      --accent:#6aa0ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height:100%; }
+    body {
+      margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      display:flex; align-items:center; justify-content:center; padding:16px;
+    }
+    .app { width: min(520px, 100%); }
+    header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 4px 12px; border-bottom:1px solid #242938; margin-bottom:12px;
+    }
+    h1 { margin:0; font-size:22px; letter-spacing:3px; text-transform:uppercase; }
+    button.icon { background:transparent; border:1px solid #2b3040; color:var(--text); border-radius:10px; padding:6px 10px; cursor:pointer; }
+    .board { display:grid; grid-template-rows: repeat(6, 1fr); gap:8px; padding:8px; }
+    .row { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; }
+    .tile {
+      height:58px; display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:24px; text-transform:uppercase;
+      border-radius:10px; background:var(--tile); border:1px solid var(--tile-border);
+      transition: transform .07s ease, background .2s;
+    }
+    .tile.reveal { transform: scale(1.02); }
+    .kbs { display:grid; gap:8px; padding:8px; }
+    .kb-row { display:flex; gap:6px; justify-content:center; }
+    .key {
+      background:#2c3140; color:var(--text); border:none; padding:12px 10px;
+      border-radius:10px; font-weight:600; cursor:pointer; min-width:30px;
+      text-transform:uppercase;
+    }
+    .key.wide { min-width:64px; font-size:14px; }
+    .k-green { background: var(--green) !important; }
+    .k-yellow { background: var(--yellow) !important; color:#111 !important; }
+    .k-gray { background: var(--gray) !important; }
+    .status { text-align:center; color:var(--muted); padding:4px 0 8px; min-height:20px; }
+    .footer { display:flex; gap:10px; justify-content:space-between; align-items:center; padding:8px; color:var(--muted); font-size:12px; }
+    .stats { display:flex; gap:12px; align-items:center; }
+    .stat { background:#1d2230; border:1px solid #2a2f3d; padding:8px 10px; border-radius:10px; }
+    .toast {
+      position:fixed; top:16px; left:50%; transform:translateX(-50%);
+      background:#1d2230; border:1px solid #2a2f3d; padding:10px 14px; border-radius:10px; color:var(--text);
+      opacity:0; pointer-events:none; transition:opacity .25s;
+    }
+    .toast.show { opacity:1; }
+    a { color:var(--accent); text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>WORDL‑ISH</h1>
+      <div style="display:flex; gap:8px;">
+        <button class="icon" id="btn-new">New</button>
+        <button class="icon" id="btn-share">Share</button>
+        <button class="icon" id="btn-install" style="display:none;">Install</button>
+      </div>
+    </header>
+
+    <div class="status" id="status"></div>
+
+    <div class="board" id="board"></div>
+
+    <div class="kbs" id="kbs"></div>
+
+    <div class="footer">
+      <div class="stats">
+        <div class="stat"><span id="s-played">0</span> played</div>
+        <div class="stat"><span id="s-win">0</span>% win</div>
+        <div class="stat">streak <span id="s-streak">0</span></div>
+      </div>
+      <div>Offline‑ready PWA</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // --- PWA install prompt handling ---
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('btn-install').style.display = 'inline-block';
+    });
+    document.getElementById('btn-install').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('btn-install').style.display = 'none';
+    });
+
+    // --- Service Worker ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+    }
+
+    // --- Game State ---
+    const ANSWERS = ["about", "other", "which", "their", "there", "first", "would", "these", "click", "price", "state", "email", "world", "music", "after", "video", "where", "books", "links", "years", "order", "items", "group", "under", "games", "could", "great", "hotel", "store", "terms", "right", "local", "those", "using", "phone", "forum", "based", "black", "check", "index", "being", "women", "today", "south", "pages", "found", "house", "photo", "power", "while", "three", "total", "place", "think", "north", "posts", "media", "water", "since", "guide", "board", "white", "small", "times", "sites", "level", "hours", "image", "title", "shall", "class", "still", "money", "every", "visit", "tools", "reply", "value", "press", "learn", "print", "stock", "point", "sales", "large", "table", "start", "model", "human", "movie", "march", "yahoo", "going", "study", "staff", "again", "april", "never", "users", "topic", "below", "party", "login", "legal", "above", "quote", "story", "rates", "young", "field", "paper", "girls", "night", "texas", "poker", "issue", "range", "court", "audio", "light", "write", "offer", "given", "files", "event", "china", "needs", "might", "month", "major", "areas", "space", "cards", "child", "enter", "share", "added", "radio", "until", "color", "track", "least", "trade", "david", "green", "close", "drive", "short", "means", "daily", "beach", "costs", "style", "front", "parts", "early", "miles", "sound", "works", "rules", "final", "adult", "thing", "cheap", "third", "gifts", "cover", "often", "watch", "deals", "words", "linux", "james", "heart", "error", "clear", "makes", "india", "taken", "known", "cases", "quick", "whole", "later", "basic", "shows", "along", "our", "own", "read"];
+    const ALPH = "qwertyuiopasdfghjklzxcvbnm";
+    const ROWS = 6, COLS = 5;
+
+    const $ = (id) => document.getElementById(id);
+    const board = $('board'); const kbs = $('kbs'); const status = $('status');
+    const toast = $('toast');
+
+    let target = pickWord();
+    let row = 0, col = 0, over = false;
+    let grid = Array.from({length: ROWS}, () => Array(COLS).fill(""));
+    let meta = Array.from({length: ROWS}, () => Array(COLS).fill(""));
+    const stats = loadStats();
+
+    // Build board UI
+    function buildBoard() {
+      board.innerHTML = "";
+      for (let r=0; r<ROWS; r++) {
+        const rowEl = document.createElement('div'); rowEl.className = 'row';
+        for (let c=0; c<COLS; c++) {
+          const t = document.createElement('div'); t.className = 'tile'; t.id = `t-{r}-{c}`;
+          rowEl.appendChild(t);
+        }
+        board.appendChild(rowEl);
+      }
+    }
+
+    // Keyboard UI
+    function buildKeyboard() {
+      const rows = ["qwertyuiop","asdfghjkl","⟵zxcvbnm↵"];
+      kbs.innerHTML = "";
+      for (const r of rows) {
+        const d = document.createElement('div'); d.className = 'kb-row';
+        for (const ch of r) {
+          const b = document.createElement('button');
+          b.className = 'key';
+          if (ch==='⟵') { b.textContent='⌫'; b.classList.add('wide'); b.onclick = backspace; }
+          else if (ch==='↵') { b.textContent='Enter'; b.classList.add('wide'); b.onclick = enter; }
+          else { b.textContent = ch; b.onclick = () => add(ch); }
+          b.id = `k-${ch}`;
+          d.appendChild(b);
+        }
+        kbs.appendChild(d);
+      }
+    }
+
+    function pickWord() {
+  const start = new Date(new Date().getFullYear(), 0, 0);
+  const now = new Date();
+  const day = Math.floor((now - start) / (1000*60*60*24));
+  return ANSWERS[(day - 1 + ANSWERS.length) % ANSWERS.length];
+}
+
+    function draw() {
+      for (let r=0; r<ROWS; r++) {
+        for (let c=0; c<COLS; c++) {
+          const t = $(`t-${r}-${c}`);
+          t.textContent = grid[r][c] || "";
+          const m = meta[r][c];
+          t.style.background = m==='g' ? 'var(--green)' : m==='y' ? 'var(--yellow)' : m==='x' ? 'var(--gray)' : 'var(--tile)';
+          t.style.color = m==='y' ? '#111' : 'var(--text)';
+        }
+      }
+    }
+
+    function add(ch) {
+      if (over) return;
+      if (col < COLS) { grid[row][col++] = ch; draw(); }
+    }
+    function backspace() {
+      if (over) return;
+      if (col>0) { grid[row][--col] = ""; draw(); }
+    }
+    function enter() {
+      if (over) return;
+      if (col < COLS) { return toastMsg("Not enough letters"); }
+      const guess = grid[row].join('');
+      if (!isValid(guess)) { return toastMsg("Not in list"); }
+      reveal(guess);
+    }
+    function isValid(w) {
+      return w.length===COLS && ANSWERS.includes(w);
+    }
+
+    function reveal(guess) {
+      const tgt = target;
+      const counts = {};
+      for (const ch of tgt) counts[ch]=(counts[ch]||0)+1;
+
+      // First pass: greens
+      for (let c=0; c<COLS; c++) {
+        if (guess[c]===tgt[c]) { meta[row][c]='g'; counts[guess[c]]--; }
+      }
+      // Second pass: yellows / grays
+      for (let c=0; c<COLS; c++) {
+        if (meta[row][c]) continue;
+        const ch = guess[c];
+        if (tgt.includes(ch) && counts[ch]>0) { meta[row][c]='y'; counts[ch]--; }
+        else meta[row][c]='x';
+      }
+
+      // Update keyboard colors (priority g>y>x)
+      for (let c=0; c<COLS; c++) {
+        const ch = guess[c];
+        const k = $('k-'+ch);
+        if (!k) continue;
+        if (meta[row][c]==='g') { k.classList.remove('k-yellow','k-gray'); k.classList.add('k-green'); }
+        else if (meta[row][c]==='y' && !k.classList.contains('k-green')) { k.classList.add('k-yellow'); }
+        else if (!k.classList.contains('k-green') && !k.classList.contains('k-yellow')) k.classList.add('k-gray');
+      }
+
+      draw();
+      if (guess===tgt) { endGame(true); return; }
+      row++; col=0;
+      if (row===ROWS) endGame(false);
+    }
+
+    function endGame(win) {
+      over = true;
+      if (win) { toastMsg("Nice! You got it."); incrementStats(true, row); }
+      else { toastMsg("The word was '"+target+"'"); incrementStats(false, ROWS); }
+      updateStatsUI();
+    }
+
+    function toastMsg(msg) {
+      toast.textContent = msg; toast.classList.add('show');
+      clearTimeout(window._t);
+      window._t = setTimeout(()=>toast.classList.remove('show'), 1600);
+    }
+
+    // Stats
+    function loadStats() {
+      const d = JSON.parse(localStorage.getItem('wi-stats')||'{}');
+      return { played:d.played||0, wins:d.wins||0, streak:d.streak||0, maxStreak:d.maxStreak||0, dist:d.dist||[0,0,0,0,0,0] };
+    }
+    function saveStats() { localStorage.setItem('wi-stats', JSON.stringify(stats)); }
+    function incrementStats(win, tries) {
+      stats.played++; if (win) { stats.wins++; stats.streak++; stats.maxStreak=Math.max(stats.maxStreak, stats.streak); stats.dist[tries-1]++; }
+      else stats.streak=0;
+      saveStats();
+    }
+    function updateStatsUI() {
+      $('s-played').textContent = stats.played;
+      $('s-win').textContent = stats.played ? Math.round(100*stats.wins/stats.played) : 0;
+      $('s-streak').textContent = stats.streak;
+    }
+
+    // Share
+    function buildShare() {
+      // Convert last row used (row-1) to emoji grid
+      let usedRows = over && grid[row]?.every(x=>x) ? row+1 : row;
+      usedRows = Math.min(usedRows, ROWS);
+      const lines = [];
+      for (let r=0; r<usedRows; r++) {
+        let line = "";
+        for (let c=0; c<COLS; c++) {
+          line += meta[r][c]==='g' ? '🟩' : meta[r][c]==='y' ? '🟨' : '⬛';
+        }
+        lines.push(line);
+      }
+      return `Wordl‑ish {over?'✓':'…'}\n` + lines.join('\n');
+    }
+
+    $('btn-share').addEventListener('click', async () => {
+      const text = buildShare();
+      try {
+        await navigator.clipboard.writeText(text);
+        toastMsg("Result copied");
+      } catch(e) {
+        toastMsg("Copy failed");
+      }
+    });
+    $('btn-new').addEventListener('click', () => newGame());
+
+    function newGame() {
+      target = pickWord(); row=0; col=0; over=false;
+      grid = Array.from({length: ROWS}, () => Array(COLS).fill(""));
+      meta = Array.from({length: ROWS}, () => Array(COLS).fill(""));
+      // reset keyboard color classes
+      for (const ch of ALPH) {
+        const k=$('k-'+ch); if (k) k.classList.remove('k-green','k-yellow','k-gray');
+      }
+      status.textContent = "";
+      draw();
+    }
+
+    // Physical keyboard
+    window.addEventListener('keydown', (e)=> {
+      if (e.key==='Enter') enter();
+      else if (e.key==='Backspace') backspace();
+      else {
+        const ch = e.key.toLowerCase();
+        if (ALPH.includes(ch)) add(ch);
+      }
+    });
+
+    // Initialize
+    buildBoard(); buildKeyboard(); draw(); updateStatsUI();
+
+  </script>
+</body>
+</html>
