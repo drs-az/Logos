@@ -1,7 +1,7 @@
 {
-  "name": "Wordl-ish",
-  "short_name": "Wordl-ish",
-  "description": "A clean, offline-capable Wordle-style PWA with install, share, and stats.",
+  "name": "Wordle",
+  "short_name": "Wordle",
+  "description": "Worlde without ads or signing in",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
