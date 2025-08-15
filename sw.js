@@ -1,6 +1,6 @@
 
 // Basic service worker for offline caching
-const CACHE = 'wordlish-v2';
+const CACHE = 'wordlish-v3';
 const ASSETS = [
   './',
   './index.html',
