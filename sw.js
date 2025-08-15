@@ -1,6 +1,6 @@
 
 // Basic service worker for offline caching
-const CACHE = 'wordlish-v1';
+const CACHE = 'wordlish-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(()=> self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener('activate', (e) => {
@@ -21,6 +21,9 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   // Network-first for html, cache-first for others
