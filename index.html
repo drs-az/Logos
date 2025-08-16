@@ -72,6 +72,7 @@
       <div style="display:flex; gap:8px;">
         <button class="icon" id="btn-new">Daily Word</button>
         <button class="icon" id="btn-share">Share</button>
+        <button class="icon" id="btn-hint">Hint</button>
         <button class="icon" id="btn-free">Free Play</button>
         <button class="icon" id="btn-update">Update</button>
         <button class="icon" id="btn-install" style="display:none;">Install</button>
@@ -99,7 +100,7 @@
   <div class="modal hidden" id="intro-modal">
     <div class="modal-box">
       <h2>Welcome to Logos</h2>
-      <p>Guess the word in 6 tries. A new word appears every day.</p>
+      <p>Guess the word in 6 tries. A new word appears every day. You may use one hint per game.</p>
       <button id="intro-start">Start</button>
     </div>
   </div>
@@ -125,7 +126,7 @@
   <div class="modal hidden" id="free-modal">
     <div class="modal-box">
       <h2>Free Play</h2>
-      <p>Words are picked at random. Free Play sharpens your Logos skills.</p>
+      <p>Words are picked at random. Free Play sharpens your Logos skills. You may use one hint per game.</p>
       <button id="free-start">Start</button>
       <button id="free-cancel">Cancel</button>
     </div>
@@ -300,6 +301,7 @@
     let freePlay = false;
     let target = pickWord();
     let row = 0, col = 0, over = false;
+    let hintUsed = false;
     let grid = Array.from({length: ROWS}, () => Array(COLS).fill(""));
     let meta = Array.from({length: ROWS}, () => Array(COLS).fill(""));
     const stats = loadStats();
@@ -354,7 +356,7 @@
           const t = $(`t-${r}-${c}`);
           t.textContent = grid[r][c] || "";
           const m = meta[r][c];
-          t.style.background = m==='g' ? 'var(--green)' : m==='y' ? 'var(--yellow)' : m==='x' ? 'var(--gray)' : 'var(--tile)';
+          t.style.background = (m==='g' || m==='h') ? 'var(--green)' : m==='y' ? 'var(--yellow)' : m==='x' ? 'var(--gray)' : 'var(--tile)';
           t.style.color = m==='y' ? '#111' : 'var(--text)';
         }
       }
@@ -366,7 +368,7 @@
     }
     function backspace() {
       if (over) return;
-      if (col>0) { grid[row][--col] = ""; draw(); }
+      if (col>0) { grid[row][--col] = ""; meta[row][col] = ''; draw(); }
     }
     function enter() {
       if (over) return;
@@ -377,6 +379,20 @@
     }
     function isValid(w) {
       return w.length===COLS && ANSWERS.includes(w);
+    }
+
+    function giveHint() {
+      if (over) return;
+      if (hintUsed) return toastMsg('Hint already used');
+      if (col >= COLS) return toastMsg('No hint available');
+      grid[row][col] = target[col];
+      meta[row][col] = 'h';
+      const k = $('k-'+target[col]);
+      if (k) { k.classList.remove('k-yellow','k-gray'); k.classList.add('k-green'); }
+      col++;
+      draw();
+      hintUsed = true;
+      $('btn-hint').disabled = true;
     }
 
     function reveal(guess) {
@@ -493,6 +509,7 @@
     }
 
     $('btn-share').addEventListener('click', doShare);
+    $('btn-hint').addEventListener('click', giveHint);
     $('btn-new').addEventListener('click', () => newGame());
     $('btn-free').addEventListener('click', () => $('free-modal').classList.remove('hidden'));
     $('free-start').addEventListener('click', () => { freePlay = true; $('free-modal').classList.add('hidden'); newGame(); });
@@ -506,7 +523,7 @@
     $('lose-share').addEventListener('click', doShare);
 
     function newGame() {
-      target = freePlay ? pickRandomWord() : pickWord(); row=0; col=0; over=false;
+      target = freePlay ? pickRandomWord() : pickWord(); row=0; col=0; over=false; hintUsed=false;
       grid = Array.from({length: ROWS}, () => Array(COLS).fill(""));
       meta = Array.from({length: ROWS}, () => Array(COLS).fill(""));
       // reset keyboard color classes
@@ -514,6 +531,7 @@
         const k=$('k-'+ch); if (k) k.classList.remove('k-green','k-yellow','k-gray');
       }
       status.textContent = "";
+      $('btn-hint').disabled = false;
       draw();
     }
 
