@@ -25,6 +25,8 @@
       display:flex; align-items:center; justify-content:space-between;
       padding:8px 4px 12px; border-bottom:1px solid #242938; margin-bottom:12px;
     }
+    .header-buttons { display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+    .header-row { display:flex; gap:8px; }
     h1 { margin:0; font-size:22px; letter-spacing:3px; text-transform:uppercase; }
     button.icon { background:transparent; border:1px solid #2b3040; color:var(--text); border-radius:10px; padding:6px 10px; cursor:pointer; }
     .board { display:grid; grid-template-rows: repeat(6, 1fr); gap:8px; padding:8px; }
@@ -69,13 +71,17 @@
   <div class="app">
     <header>
       <h1>LOGOS</h1>
-      <div style="display:flex; gap:8px;">
-        <button class="icon" id="btn-new">Daily Word</button>
-        <button class="icon" id="btn-share">Share</button>
-        <button class="icon" id="btn-hint">Hint</button>
-        <button class="icon" id="btn-free">Free Play</button>
-        <button class="icon" id="btn-update">Update</button>
-        <button class="icon" id="btn-install" style="display:none;">Install</button>
+      <div class="header-buttons">
+        <div class="header-row">
+          <button class="icon" id="btn-new">Daily Word</button>
+          <button class="icon" id="btn-free">Free Play</button>
+          <button class="icon" id="btn-hint">Hint</button>
+        </div>
+        <div class="header-row">
+          <button class="icon" id="btn-share">Share</button>
+          <button class="icon" id="btn-update">Update</button>
+          <button class="icon" id="btn-install" style="display:none;">Install</button>
+        </div>
       </div>
     </header>
 
